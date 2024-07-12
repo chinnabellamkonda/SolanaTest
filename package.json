@@ -1,7 +1,8 @@
 {
   "dependencies": {
     "@solana-developers/helpers": "^2.3.0",
-    "@solana/web3.js": "^1.94.0",
+    "@solana/spl-token": "^0.4.8",
+    "@solana/web3.js": "^1.95.0",
     "esrun": "^3.2.26",
     "typescript": "^5.5.3"
   }

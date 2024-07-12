@@ -2,10 +2,10 @@ import { Connection, Transaction, PublicKey } from '@solana/web3.js';
 
 (async () => {
   // Connect to the Solana mainnet-beta cluster
-  const connection = new Connection('http://127.0.0.1:8899', 'confirmed');
+  const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
 
   // Example transaction signature (replace with your own)
-  const transactionSignature = '5LuPDbRMofPx18KAkeEKqMsdsG2mWj93h6mzHrQmmqvofkLsCSvS5VMDJj7n3Pw4j7jMjCXE3nwEFzHqMkrxHUDq';
+  const transactionSignature = '4QV3nLZy8Z6oWynP7CuKV4XJwbCSiy3wzzSs2HRL5SrvrBqN4cxHGHPkBYeR2sQ5XPisFvPpEcthAynynvyu7YWp';
 
   try {
     // Fetch the transaction details
