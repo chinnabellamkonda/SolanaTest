@@ -1,61 +1,58 @@
-import { Connection, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction, simulateTransaction } from '@solana/web3.js';
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  sendAndConfirmTransaction
+} from '@solana/web3.js';
 
-// Establish connection to the Solana cluster
-const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+(async () => {
+  // Connect to the cluster
+  const connection = new Connection('http://localhost:8899', 'confirmed');
 
-async function simulateSolanaTransaction(sender: Keypair, recipientPubkey: PublicKey, amount: number) {
-  try {
-    // Fetch recent blockhash (required for transaction construction)
-    const { blockhash } = await connection.getRecentBlockhash();
+  // Generate sender and recipient keypairs
+  const senderKeypair = Keypair.fromSecretKey(Uint8Array.from([
+  219, 205, 206, 144,  93, 241,  55,  31,  62, 210, 112,
+  191,  55, 201,  67, 192,  64,  76,  12,  98, 215, 160,
+   64, 210, 192,   4, 149,  44, 129,  46, 151, 241, 184,
+  240, 150,  14, 211, 214,  61, 212, 122,  40, 161, 116,
+  159, 137,  84,  87, 170, 150,  88,  23,  19,  86, 227,
+  192, 154,  17,  85, 196, 230, 145,  29,  90
+]));
+  const recipientPubkey = new PublicKey('9CsrfpiWxsAJQmqCPPZcqENnYMDFLfSq7hd6ZfKfaaJw');
 
-    // Example: Create a transaction instruction to transfer SOL
-    const transactionInstruction = SystemProgram.transfer({
-      fromPubkey: sender.publicKey,
+  // Fetch recent blockhash
+  const { blockhash } = await connection.getRecentBlockhash();
+
+  // Create a transaction
+  const transaction = new Transaction().add(
+    SystemProgram.transfer({
+      fromPubkey: senderKeypair.publicKey,
       toPubkey: recipientPubkey,
-      lamports: amount, // Amount in lamports (1 SOL = 1,000,000,000 lamports)
-    });
+      lamports: 1 * LAMPORTS_PER_SOL, // Amount in lamports (1 SOL = 1,000,000,000 lamports)
+    })
+  );
 
-    // Example: Create a transaction with the instruction
-    const transaction = new Transaction().add(transactionInstruction);
+  // Set the recent blockhash
+  transaction.recentBlockhash = blockhash;
+  transaction.feePayer = senderKeypair.publicKey;
 
-    // Simulate the transaction to check validity
-    const simulatedTransaction = await simulateTransaction(connection, transaction, [sender]);
+  // Sign the transaction
+  // Sign and send the transaction
+  const signers = [senderKeypair, senderKeypair];
+  const signature = await connection.sendTransaction(transaction, signers);
+  console.log("signature======", signature) 
+  // Simulate the transaction
+  const simulateResult = await connection.simulateTransaction(transaction);
+  if (simulateResult.value.err) {
+    console.error('Transaction simulation failed:', simulateResult.value.err);
+  } else {
+    console.log('Transaction simulation succeeded');
 
-    // Check if the transaction simulation succeeded
-    if (simulatedTransaction.err) {
-      console.error('Transaction simulation failed:', simulatedTransaction.err);
-    } else {
-      console.log('Transaction simulation succeeded');
-      // Proceed with sending the transaction if simulation was successful
-      // const signature = await sendAndConfirmTransaction(connection, transaction, [sender]);
-      // console.log('Transaction confirmed with signature:', signature);
-    }
-  } catch (error) {
-    console.error('Error simulating transaction:', error);
+    // Send the transaction
+    const signature = await sendAndConfirmTransaction(connection, transaction, [senderKeypair]);
+    console.log('Transaction confirmed with signature:', signature);
   }
-}
-
-async function main() {
-  // Generate a new keypair for the sender account
-  const senderKeypair = Keypair.generate();
-
-  // Generate a new keypair for the recipient account (for example purposes)
-  const recipientKeypair = Keypair.generate();
-  const recipientPubkey = recipientKeypair.publicKey;
-
-  // Airdrop SOL to the sender account to cover transaction fees
-  await connection.requestAirdrop(senderKeypair.publicKey, 10 * 1000000000); // Request 10 SOL
-
-  // Simulate a transaction to fund the recipient account using the sender's keypair
-  const lamportsToTransfer = 5 * 1000000000; // 5 SOL in lamports
-  await simulateSolanaTransaction(senderKeypair, recipientPubkey, lamportsToTransfer);
-  console.log('Transaction simulation complete.');
-
-  // Print out the sender and recipient public keys for reference
-  console.log('Sender public key:', senderKeypair.publicKey.toBase58());
-  console.log('Recipient public key:', recipientPubkey.toBase58());
-}
-
-main().catch((error) => {
-  console.error('Error simulating transaction:', error);
-});
+})();

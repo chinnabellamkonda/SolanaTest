@@ -1,12 +1,10 @@
-import { Connection, SendOptions, Keypair, Transaction, SystemProgram, clusterApiUrl } from "@solana/web3.js";
+import { Connection, SendOptions, Keypair, Transaction, SystemProgram, clusterApiUrl, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 // Replace with your connection endpoint (e.g. devnet, mainnet-beta)
 const connection = new Connection('http://localhost:8899', "confirmed");
 
-// Generate a new keypair for the sender (or load an existing one)
-const sender = Keypair.generate();
-const bal = await connection.requestAirdrop(sender.publicKey, 10 * 1000000000); 
-console.log("bal:--", bal)
+const sender = airdropBal(connection)
+
 // Generate a new keypair for the receiver
 const receiver = Keypair.generate();
 
@@ -22,12 +20,15 @@ const receiver = Keypair.generate();
     SystemProgram.transfer({
       fromPubkey: sender.publicKey,
       toPubkey: receiver.publicKey,
-      lamports: 1, // Amount in lamports (1 SOL = 1,000,000,000 lamports)
+      lamports: 1 * LAMPORTS_PER_SOL, // Amount in lamports (1 SOL = 1,000,000,000 lamports)
     })
   );
-console.log("transaction======", transaction)
 // Sign the transaction with the sender's keypair
-await transaction.sign(sender);
+const signers = [sender, sender];
+const signature = await connection.sendTransaction(transaction, signers);
+
+console.log("signature======", signature)
+
 
 // Serialize the transaction
 const serializedTransaction = await transaction.serialize();
@@ -56,6 +57,19 @@ async function sendSignedTransaction() {
       // Handle other errors
       console.error('Error:', error.message);
     }
+  }
+}
+
+async function airdropBal(connection: Connection) {
+  try {
+    // Generate a new keypair for the sender (or load an existing one)
+    const sender = Keypair.generate();
+    await connection.requestAirdrop(sender.publicKey, 10 * LAMPORTS_PER_SOL);
+    const bal = await connection.getBalance(sender.publicKey)
+    console.log("balance===", bal)
+    return sender;
+  } catch (error) {
+    console.error('Error:', error.message);
   }
 }
 
